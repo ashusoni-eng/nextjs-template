@@ -1,11 +1,12 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Credentials, LoginResponse, RegisterUser } from '@/types/auth';
+import { Credentials, verifyOtpResponse, LoginResponse, RegisterResponse, RegisterUser, VerifyOtpRequest } from '@/types/auth';
 import {
   login as apiLogin,
   register as apiRegister,
   logout as apiLogout,
+  verifyOtp as apiVerifyOtp,
 } from './auth-api';
 
 import { jwtDecode } from 'jwt-decode';
@@ -21,7 +22,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (credentials: Credentials) => Promise<LoginResponse | undefined>;
-  register: (credentials: RegisterUser) => Promise<LoginResponse | undefined>;
+  register: (credentials: RegisterUser) => Promise<RegisterResponse | undefined>;
+  verifyOtp: (payload: VerifyOtpRequest) => Promise<verifyOtpResponse | undefined>;
   logout: () => void;
   checkAuth: () => void;
 }
@@ -58,22 +60,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAuthenticated(false);
       setIsAdmin(false);
       console.error('Login failed', error);
+      throw error;
     }
   };
 
   const register = async (credentials: RegisterUser) => {
     try {
-      const data = await apiRegister(credentials);
-      if (data?.access_token) {
+      return await apiRegister(credentials);
+    } catch (error) {
+      console.error('Registration failed', error);
+      throw error;
+    }
+  };
+
+  const verifyOtp = async (payload: VerifyOtpRequest) => {
+    try {
+      const data = await apiVerifyOtp(payload);
+      console.log("verify data: ", data);
+      if (data?.data.access_token) {
+        localStorage.setItem('access_token', data.data.access_token);
         setIsAuthenticated(true);
-        const role = decodeRoleFromToken(data.access_token);
+        const role = decodeRoleFromToken(data.data.access_token);
         setIsAdmin(role === 'admin');
       }
       return data;
     } catch (error) {
-      setIsAuthenticated(false);
-      setIsAdmin(false);
-      console.error('Registration failed', error);
+      console.error('OTP verification failed', error);
+      throw error;
     }
   };
 
@@ -97,7 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isAdmin, login, register, logout, checkAuth }}
+      value={{ isAuthenticated, isAdmin, login, register, verifyOtp, logout, checkAuth }}
     >
       {children}
     </AuthContext.Provider>

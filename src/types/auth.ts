@@ -4,7 +4,7 @@ export interface Credentials {
 }
 
 export interface RegisterUser {
-    name : string,
+    fullName : string,
     phone : string,
     email : string,
     password : string
@@ -39,7 +39,42 @@ export interface VerifyOtpRequest {
   otp: string;
 }
 
-export interface GenericResponse {
+export interface GenericResponse {  
   message: string;
   success: boolean;
+}
+
+export interface verifyOtpResponse {
+   message: string;
+  success: boolean;
+  data : {
+    user : {
+      id: string;
+      fullName: string;
+      email: string;
+      phone: string;      
+      isEmailVerified: boolean;
+    },
+    access_token: string
+    refres_token: string
+  }
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: {
+    otp: string;
+    otpExpire: string;
+    user: {
+      id: string;
+      fullName: string;
+      email: string;
+      phone: string;
+      accountType: string;
+      isEmailVerified: boolean;
+    }
+  };
+  timestamp: string;
 }
